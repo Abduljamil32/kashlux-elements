@@ -5,3 +5,5 @@ Design files of the Kashlux website redesign, served to the Wix editor through t
 
 Generated files only (page texts, styles and public images); don't edit them here.
 Source and generator: the private site repository (`design/build/wix_sections.py`).
+
+`kl-shell.js` is the site header and footer (Custom Element attribute `name` = `header` or `footer`).
