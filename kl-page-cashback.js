@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=32c9e8cf'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=af1678ca'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -77,7 +77,9 @@ const SHELL_CSS = ':host{display:block;position:relative;z-index:60;width:100%;f
   '-webkit-font-smoothing:antialiased}.kl-body{margin:0;background:none!important;overflow:visible!important}' +
   'header{position:relative!important;inset:auto!important;top:auto!important;transform:none!important}' +
   '.kl-backdrop.open{opacity:1;visibility:visible;transition:opacity .4s}' +
-  '.kl-footer{margin:0!important}';
+  '.kl-footer{margin:0!important}' +
+  // menu items stay on one line; the phone number is already in the promo line, so it leaves the header when space is short
+  '.menu>a,.kl-dd>a{white-space:nowrap}@media (max-width:1600px){.nav-right .phone{display:none}}';
 
 const sheets = {}; // one parsed stylesheet per kind ("page", "shell"), shared by every element of that kind
 const cssFor = (key) => REG[key].css + (key === 'shell' ? SHELL_CSS : BASE_CSS);
