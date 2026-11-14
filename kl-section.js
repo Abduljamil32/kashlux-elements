@@ -133,6 +133,46 @@ function videoModal(lang) {
 
 // The demo pages' own scripts use document.getElementById / querySelector(All). Run them against this
 // section's shadow DOM instead of the Wix page, so they find their elements and touch nothing else.
+// Forms of the content pages (contact, services, plumber, B2B, careers…): once the page's own script has accepted
+// the form (no field marked as an error), send "kl-lead" with every filled field, so the Wix page code can save it
+// with backend/leads.web.js. The page's own "thank you" message stays as it is.
+function fieldLabel(form, el) {
+  const id = el.id && form.querySelector('label[for="' + el.id + '"]');
+  const wrap = el.closest('label, .field, [class*="-f"], div');
+  const text = (id && id.textContent) || (wrap && wrap.querySelector('label, b, span') && wrap.querySelector('label, b, span').textContent) ||
+    el.getAttribute('aria-label') || el.placeholder || el.name || el.id || '';
+  return text.replace(/\s+/g, ' ').replace(/[*:]/g, '').trim().slice(0, 60);
+}
+function wireForms(host, root, lang) {
+  root.querySelectorAll('form').forEach((form) => {
+    form.addEventListener('submit', () => {
+      setTimeout(() => {
+        // the page script rejected it: a visible field or message marked as an error
+        const shown = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+        if ([...form.querySelectorAll('.err, .bad, [aria-invalid="true"]')].some(shown)) return;
+        const fields = [];
+        let name = '';
+        let phone = '';
+        form.querySelectorAll('input, select, textarea').forEach((el) => {
+          if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button' || el.type === 'file') return;
+          if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+          const v = String(el.value || '').trim();
+          if (!v || v === 'on') return;
+          if (!phone && (el.type === 'tel' || /phone|tel|\bph\b/i.test(el.id + ' ' + el.name))) { phone = v; return; }
+          if (!name && /name|nm|\bism/i.test(el.id + ' ' + el.name)) { name = v; return; }
+          fields.push(el.type === 'radio' || el.type === 'checkbox' ? v : fieldLabel(form, el) + ': ' + v);
+        });
+        if (!phone) return;
+        host.dispatchEvent(new CustomEvent('kl-lead', {
+          detail: { name: name || '—', phone, message: fields.join('. ').slice(0, 1400), lang, form: form.id || '' },
+          bubbles: true,
+          composed: true,
+        }));
+      }, 0);
+    });
+  });
+}
+
 const SHELL_IDS = ['hdr', 'drawer', 'burger', 'close', 'progress', 'klSearch', 'klSearchInput', 'klSearchRes'];
 function runPageScript(code, root, body, name) {
   const find = {
@@ -205,6 +245,7 @@ class KlSection extends HTMLElement {
     const setup = { finish: this.finish, projects: this.projects, how: this.videos, showrooms: this.showrooms, consult: this.form, story: this.story };
     known.forEach((n) => { if (setup[n]) setup[n].call(this, root, lang); });
     known.forEach((n) => (KL.js[lang][n] || []).forEach((code) => runPageScript(code, root, wrap, n)));
+    if (known.includes('page')) wireForms(this, root, lang);
   }
 
   // In-page anchors (#consult…) jump to the matching section, wherever it is on the page.
