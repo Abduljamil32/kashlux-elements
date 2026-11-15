@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=914ed910'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=60345fb2'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -129,7 +129,7 @@ const plainPath = () => location.pathname.replace(/^\/uz(?=\/|$)/, '') || '/';
 // the header file runs this once per page.
 const STORE_TEXTS = {
   uz: {
-    'Home': 'Boş sahifa', 'All Products': 'Barça mahsulotlar', 'Installations': 'Installyatsiyalar',
+    'Home': 'Boş sahifa', 'Bosh sahifa': 'Boş sahifa', 'Узбекистан': 'Özbekiston', 'Uzbekistan': 'Özbekiston', 'All Products': 'Barça mahsulotlar', 'Installations': 'Installyatsiyalar',
     'Price (low to high)': 'Avval arzonlari', 'Price (high to low)': 'Avval qimmatlari', 'Newest': 'Avval yangilari',
     'Name A-Z': 'Nomi A–Z', 'Name Z-A': 'Nomi Z–A', 'Sort by': 'Saralaş', 'Filter by': 'Filtrlaş',
     'Order summary': 'Buyurtma', 'Subtotal': 'Oraliq jami', 'Delivery': 'Yetkazib beriş', 'Shipping': 'Yetkazib beriş',
