@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=f6f793a3'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=914ed910'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -123,6 +123,82 @@ function keepTestSite(root) {
   });
 }
 const plainPath = () => location.pathname.replace(/^\/uz(?=\/|$)/, '') || '/';
+
+// Wix Stores (catalog, product page, cart) has no Uzbek: on Uzbek pages it shows English texts, and the store's
+// category names are Russian/English in both languages. Swap whole texts (exact match only) in the page itself;
+// the header file runs this once per page.
+const STORE_TEXTS = {
+  uz: {
+    'Home': 'Boş sahifa', 'All Products': 'Barça mahsulotlar', 'Installations': 'Installyatsiyalar',
+    'Price (low to high)': 'Avval arzonlari', 'Price (high to low)': 'Avval qimmatlari', 'Newest': 'Avval yangilari',
+    'Name A-Z': 'Nomi A–Z', 'Name Z-A': 'Nomi Z–A', 'Sort by': 'Saralaş', 'Filter by': 'Filtrlaş',
+    'Order summary': 'Buyurtma', 'Subtotal': 'Oraliq jami', 'Delivery': 'Yetkazib beriş', 'Shipping': 'Yetkazib beriş',
+    'FREE': 'Bepul', 'Free': 'Bepul', 'Total': 'Jami', 'Estimated Total': 'Taxminiy jami', 'Secure Checkout': 'Xavfsiz tölov',
+    'Quantity': 'Miqdori', 'Out of stock': 'Sotuvda yöq', 'In stock': 'Sotuvda bor', 'Add to Cart': 'Savatga',
+    'View Cart': 'Savatni oçiş', 'Continue Browsing': 'Xaridni davom ettiriş', 'Clear Filters': 'Filtrlarni tozalaş',
+    'Read More': 'Batafsil', 'Read Less': 'Qisqaroq',
+    'Аксессуары': 'Aksessuarlar', 'Биде': 'Bide', 'Ванны': 'Vannalar', 'Врезные раковины': 'Örnatma rakovinalar',
+    'Душевые системы': 'Duş tizimlari', 'Зеркало': 'Oynalar', 'Инсталяция': 'Installyatsiya',
+    'Накладные раковины': 'Ustki rakovinalar', 'Напольные биде': 'Polga örnatiladigan bide',
+    'Напольные раковины': 'Polga örnatiladigan rakovinalar', 'Панель Смыва': 'Suv tuşiriş paneli',
+    'Подвесные биде': 'Osma bide', 'Полотенцесушитель': 'Soçiq quritgiç', 'Раковина подвесная': 'Osma rakovina',
+    'Раковина со шкафом': 'Tumbali rakovina', 'Раковины': 'Rakovinalar', 'Раковины под столешницу': 'Stol osti rakovinalari',
+    'Ручные лейки': 'Qöl duşlari', 'Сифоны для ванны': 'Vanna sifonlari', 'Смесители': 'Aralaştirgiçlar',
+    'Смесители для биде': 'Bide uçun aralaştirgiçlar', 'Смесители для ванны и душа': 'Vanna va duş uçun aralaştirgiçlar',
+    'Смесители для кухни': 'Oşxona uçun aralaştirgiçlar', 'Смесители для раковины': 'Rakovina uçun aralaştirgiçlar',
+    'Унитаз наполный': 'Polga örnatiladigan unitaz', 'Унитаз подвесной': 'Osma unitaz', 'Унитазы': 'Unitazlar',
+  },
+  ru: { 'All Products': 'Все товары', 'Installations': 'Инсталляции', 'Унитаз наполный': 'Унитаз напольный', 'Инсталяция': 'Инсталляция' },
+};
+const STORE_RE = { uz: [[/^(\d[\d\s,.]*) products?$/, '$1 ta mahsulot'], [/^(\d[\d\s,.]*) items?$/, '$1 ta mahsulot']], ru: [] };
+function storeTexts() {
+  if (window.KL_STORE_TEXTS) return;
+  window.KL_STORE_TEXTS = true;
+  const lang = /^uz/i.test(document.documentElement.lang || '') || /\/uz(\/|$)/.test(location.pathname) ? 'uz' : 'ru';
+  const map = STORE_TEXTS[lang];
+  const res = STORE_RE[lang];
+  const swap = (node) => {
+    const t = node.nodeValue.trim();
+    if (!t || t.length > 60) return;
+    let v = map[t];
+    if (!v) for (const [re, to] of res) if (re.test(t)) { v = t.replace(re, to); break; }
+    if (v && v !== t) node.nodeValue = node.nodeValue.replace(t, v);
+  };
+  const walk = (root) => {
+    const it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentNode && /^(SCRIPT|STYLE|NOSCRIPT)$/.test(n.parentNode.nodeName) ? 2 : 1),
+    });
+    for (let n = it.nextNode(); n; n = it.nextNode()) swap(n);
+  };
+  // long product descriptions: show the first part with a "more" button, so the order button stays in view
+  const MORE = lang === 'uz' ? ['Batafsil', 'Qisqaroq'] : ['Подробнее', 'Свернуть'];
+  const clamp = () => {
+    document.querySelectorAll('.wixui-collapsible-text:not([data-kl-clamp])').forEach((box) => {
+      const el = box.querySelector('.wixui-collapsible-text__text');
+      if (!el || el.scrollHeight < 420) return;
+      box.setAttribute('data-kl-clamp', '');
+      el.setAttribute('data-kl-clamp', 'closed');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wixui-kl-more'; // global.css writes .kl-more; Wix prefixes it
+      b.textContent = MORE[0];
+      b.onclick = () => {
+        const open = el.getAttribute('data-kl-clamp') === 'open';
+        el.setAttribute('data-kl-clamp', open ? 'closed' : 'open');
+        b.textContent = MORE[open ? 0 : 1];
+      };
+      box.appendChild(b);
+    });
+  };
+  let queued = false;
+  const run = () => { queued = false; walk(document.body); clamp(); };
+  const start = () => {
+    run();
+    new MutationObserver(() => { if (!queued) { queued = true; setTimeout(run, 120); } })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+  };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+}
 
 function loadFont() {
   if (document.querySelector('link[data-kl-font]')) return;
@@ -758,6 +834,7 @@ class KlSection extends HTMLElement {
 }
 
 loadFont(); // start the font download while the page is still drawing
+storeTexts();
 if (!customElements.get('kl-section')) customElements.define('kl-section', KlSection);
 // The Wix editor and Preview sometimes keep the default tag name of a new custom element; answer to it too,
 // so the section also shows there. (Only on pages that load this file.)
