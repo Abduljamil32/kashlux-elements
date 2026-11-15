@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=109fe948'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=18ecdf90'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -237,7 +237,8 @@ function wireForms(host, root, lang) {
   });
 }
 
-const SHELL_IDS = ['hdr', 'drawer', 'burger', 'close', 'progress', 'klSearch', 'klSearchInput', 'klSearchRes'];
+const LOCAL_EVENTS = ['click', 'input', 'change', 'submit', 'focusin', 'focusout', 'pointerdown', 'pointerup', 'mouseover', 'mouseout'];
+const SHELL_IDS = ['hdr','drawer', 'burger', 'close', 'progress', 'klSearch', 'klSearchInput', 'klSearchRes'];
 function runPageScript(code, root, body, name) {
   const find = {
     // elements of the demo's own header/drawer/progress bar don't exist on Wix: hand the script a stand-in
@@ -246,6 +247,9 @@ function runPageScript(code, root, body, name) {
     querySelectorAll: (q) => root.querySelectorAll(q),
     getElementsByClassName: (c) => root.querySelectorAll('.' + c.trim().split(/\s+/).join('.')),
     getElementsByTagName: (t) => root.querySelectorAll(t),
+    // clicks etc. inside the shadow DOM reach `document` with the host as target, so listen on the shadow root
+    addEventListener: (t, fn, o) => (LOCAL_EVENTS.includes(t) ? root : document).addEventListener(t, fn, o),
+    removeEventListener: (t, fn, o) => (LOCAL_EVENTS.includes(t) ? root : document).removeEventListener(t, fn, o),
   };
   const doc = new Proxy(document, {
     get(target, prop) {
