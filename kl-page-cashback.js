@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=d17d2bc4'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=109fe948'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -70,7 +70,9 @@ const BASE_CSS = ':host{display:block;width:100%;font-family:"Manrope",system-ui
   // the Wix editor and Preview draw custom elements in a tall iframe, where 100vh is the whole box
   '.hero-grid{min-height:clamp(560px,calc(100svh - 80px),820px)!important}' +
   // closed slide-in panels (project details) must not widen the Wix page
-  '.case:not(.open){display:none}';
+  '.case:not(.open){display:none}' +
+  // quicker fade-in for content further down the page
+  '.rv{transition-duration:.5s}';
 
 // header and footer: the demo's own header is fixed to the window; on Wix it sits in the Wix header section
 const SHELL_CSS = ':host{display:block;position:relative;z-index:60;width:100%;font-family:"Manrope",system-ui,sans-serif;color:var(--navy);' +
@@ -124,6 +126,13 @@ const plainPath = () => location.pathname.replace(/^\/uz(?=\/|$)/, '') || '/';
 
 function loadFont() {
   if (document.querySelector('link[data-kl-font]')) return;
+  ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'].forEach((h) => {
+    const p = document.createElement('link');
+    p.rel = 'preconnect';
+    p.href = h;
+    if (h.includes('gstatic')) p.crossOrigin = '';
+    document.head.appendChild(p);
+  });
   const l = document.createElement('link');
   l.rel = 'stylesheet';
   l.href = FONT_URL;
@@ -582,13 +591,21 @@ class KlSection extends HTMLElement {
     });
   }
 
+  // Fade-in on scroll, without hiding content: whatever is on (or above) the screen when the page draws shows
+  // at once, and the rest starts fading in a little before it scrolls into view.
   reveal(root) {
-    const els = root.querySelectorAll('.rv');
+    const els = [...root.querySelectorAll('.rv')];
     if (!('IntersectionObserver' in window) || reduce()) { els.forEach((el) => el.classList.add('in')); return; }
+    const fold = window.innerHeight * 1.1;
+    const later = els.filter((el) => {
+      if (el.getBoundingClientRect().top < fold) { el.style.transition = 'none'; el.classList.add('in'); return false; }
+      return true;
+    });
+    if (!later.length) return;
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-    }), { threshold: 0.12 });
-    els.forEach((el, i) => { el.style.transitionDelay = (i % 4) * 70 + 'ms'; io.observe(el); });
+    }), { threshold: 0, rootMargin: '0px 0px 20% 0px' });
+    later.forEach((el, i) => { el.style.transitionDelay = (i % 3) * 50 + 'ms'; io.observe(el); });
   }
 
   story(root) {
@@ -733,6 +750,7 @@ class KlSection extends HTMLElement {
   }
 }
 
+loadFont(); // start the font download while the page is still drawing
 if (!customElements.get('kl-section')) customElements.define('kl-section', KlSection);
 // The Wix editor and Preview sometimes keep the default tag name of a new custom element; answer to it too,
 // so the section also shows there. (Only on pages that load this file.)
