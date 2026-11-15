@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=18ecdf90'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=a1ce471d'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -251,17 +251,20 @@ function runPageScript(code, root, body, name) {
     addEventListener: (t, fn, o) => (LOCAL_EVENTS.includes(t) ? root : document).addEventListener(t, fn, o),
     removeEventListener: (t, fn, o) => (LOCAL_EVENTS.includes(t) ? root : document).removeEventListener(t, fn, o),
   };
-  const doc = new Proxy(document, {
-    get(target, prop) {
+  // the proxy's target is a plain object: Wix makes some document methods read-only and non-configurable,
+  // and a proxy of `document` itself may not hand out a different (bound) function for those
+  const doc = new Proxy({}, {
+    get(_, prop) {
       if (prop in find) return find[prop];
       if (prop === 'body') return body;
-      const v = Reflect.get(target, prop);
-      return typeof v === 'function' ? v.bind(target) : v;
+      const v = Reflect.get(document, prop);
+      return typeof v === 'function' ? v.bind(document) : v;
     },
-    set(target, prop, value) {
+    set(_, prop, value) {
       if (prop === 'title') return true; // the Wix page keeps its own title
-      return Reflect.set(target, prop, value);
+      return Reflect.set(document, prop, value);
     },
+    has(_, prop) { return prop in find || prop in document; },
   });
   try {
     // eslint-disable-next-line no-new-func
