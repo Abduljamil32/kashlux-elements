@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=c63e4604'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=05c79f3a'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -196,6 +196,16 @@ const STORE_TEXTS = {
     'Унитазы': 'Toilets', 'Узбекистан': 'Uzbekistan', 'Главная': 'Home', 'Все товары': 'All Products',
   },
 };
+// English is a hidden Wix language: Wix serves the main language (Uzbek) there, so the shop widgets show the
+// Uzbek labels set in the editor. Turn them back into English: the reverse of the Uzbek map for Wix's own English
+// labels, plus the labels that were typed in Uzbek directly in the widget settings.
+Object.entries(STORE_TEXTS.uz).forEach(([en, uz]) => {
+  if (/^[\x20-\x7e]+$/.test(en) && !(uz in STORE_TEXTS.en)) STORE_TEXTS.en[uz] = en;
+});
+Object.assign(STORE_TEXTS.en, {
+  'Böyiça qidiriş': 'Browse by', 'Saralaş': 'Sort by', 'Köproq yuklaş': 'Load more', 'Boş sahifa': 'Home',
+  'Barça mahsulotlar': 'All Products',
+});
 const STORE_RE = { uz: [[/^(\d[\d\s,.]*) products?$/, '$1 ta mahsulot'], [/^(\d[\d\s,.]*) items?$/, '$1 ta mahsulot']], ru: [], en: [] };
 function storeTexts() {
   if (window.KL_STORE_TEXTS) return;
