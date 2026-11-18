@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=ce9ce3d5'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=4150779b'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -112,19 +112,30 @@ function styles(root, key = 'page') {
 }
 
 // Uzbek pages live under /uz and English pages under /en on kashlux.uz: send internal links there too.
-const PREFIX = { ru: '', uz: '/uz', en: '/en' };
+// English is a hidden Wix language for now (no /en pages yet): it is reached with ?lang=en, kept on every link
+const PREFIX = { ru: '', uz: '/uz', en: '' };
+const QUERY_LANG = { en: 'en' };
+const withParam = (h, k, v) => {
+  if (!h || h.startsWith('//') || new RegExp('[?&]' + k + '=').test(h)) return h;
+  const [path, hash] = h.split('#');
+  return path + (path.includes('?') ? '&' : '?') + k + '=' + encodeURIComponent(v) + (hash ? '#' + hash : '');
+};
 const LANG_RE = /^\/(uz|en)(?=\/|$|[?#])/;
 function localize(root, lang) {
   const pre = PREFIX[lang];
-  if (!pre) return;
+  const q = QUERY_LANG[lang];
+  if (!pre && !q) return;
   root.querySelectorAll('a[href^="/"]').forEach((a) => {
     const h = a.getAttribute('href');
     if (h.startsWith('//') || LANG_RE.test(h)) return;
-    a.setAttribute('href', h === '/' ? pre : pre + h);
+    if (pre) a.setAttribute('href', h === '/' ? pre : pre + h);
+    else a.setAttribute('href', withParam(h, 'lang', q));
   });
 }
 const pageLang = () => {
   // the Wix editor marks its canvas with the editor's own language: there only the address counts
+  const q = new URLSearchParams(location.search).get('lang');
+  if (q === 'en') return 'en';
   const editor = /editor\.wix|wixstudio|editorx/.test(location.hostname);
   const l = editor ? '' : (document.documentElement.lang || '').toLowerCase();
   const m = location.pathname.match(LANG_RE);
@@ -574,7 +585,11 @@ class KlSection extends HTMLElement {
       a.classList.toggle('on', on);
       if (on) a.setAttribute('aria-current', 'true');
       const pre = PREFIX[to] || '';
-      a.href = (pre ? (path === '/' ? pre : pre + path) : path) + tail;
+      const params = new URLSearchParams(location.search);
+      params.delete('lang');
+      if (QUERY_LANG[to]) params.set('lang', QUERY_LANG[to]);
+      const qs = params.toString();
+      a.href = (pre ? (path === '/' ? pre : pre + path) : path) + (qs ? '?' + qs : '') + location.hash;
     }));
 
     // side menu (phones, tablets)
@@ -621,7 +636,7 @@ class KlSection extends HTMLElement {
       pages.push({ href, name, sub });
     });
     const rcParam = new URLSearchParams(location.search).get('rc');
-    const searchUrl = (q) => (PREFIX[lang] || '') + '/search?q=' + encodeURIComponent(q) + (rcParam ? '&rc=' + encodeURIComponent(rcParam) : '');
+    const searchUrl = (q) => (PREFIX[lang] || '') + '/search?q=' + encodeURIComponent(q) + (rcParam ? '&rc=' + encodeURIComponent(rcParam) : '') + (QUERY_LANG[lang] ? '&lang=' + QUERY_LANG[lang] : '');
     const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     let sel = 0;
     const mark = () => $$('a', res).forEach((a, k) => a.setAttribute('aria-selected', String(k === sel)));
