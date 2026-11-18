@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=4150779b'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=c63e4604'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -136,6 +136,10 @@ const pageLang = () => {
   // the Wix editor marks its canvas with the editor's own language: there only the address counts
   const q = new URLSearchParams(location.search).get('lang');
   if (q === 'en') return 'en';
+  // in the editor each custom element is drawn in its own preview frame (static.parastorage.com/…/
+  // CustomElementPreviewIframe…), which carries no site language at all: show the main language, Uzbek
+  const preview = /parastorage\.com$/.test(location.hostname) || /CustomElementPreview/.test(location.pathname);
+  if (preview) return 'uz';
   const editor = /editor\.wix|wixstudio|editorx/.test(location.hostname);
   const l = editor ? '' : (document.documentElement.lang || '').toLowerCase();
   const m = location.pathname.match(LANG_RE);
