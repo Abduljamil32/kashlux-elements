@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=4e4016f4'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=ce9ce3d5'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -124,7 +124,9 @@ function localize(root, lang) {
   });
 }
 const pageLang = () => {
-  const l = (document.documentElement.lang || '').toLowerCase();
+  // the Wix editor marks its canvas with the editor's own language: there only the address counts
+  const editor = /editor\.wix|wixstudio|editorx/.test(location.hostname);
+  const l = editor ? '' : (document.documentElement.lang || '').toLowerCase();
   const m = location.pathname.match(LANG_RE);
   return l.startsWith('uz') || (m && m[1] === 'uz') ? 'uz' : l.startsWith('en') || (m && m[1] === 'en') ? 'en' : 'ru';
 };
