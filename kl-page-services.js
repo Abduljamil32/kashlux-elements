@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=a717afea'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=23d58853'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -274,6 +274,16 @@ function loadFont() {
   l.href = FONT_URL;
   l.dataset.klFont = '';
   document.head.appendChild(l);
+}
+
+// Wix's login / sign-up window uses the 48px theme heading, so «Зарегистрироваться» is wider than the
+// 400px window and gets cut off at both edges. Shrink only that window's titles.
+function fitLoginTitles() {
+  if (document.querySelector('style[data-kl-login]')) return;
+  const st = document.createElement('style');
+  st.dataset.klLogin = '';
+  st.textContent = '[id^="SM_ROOT_COMP"] h2{font-size:28px!important;line-height:1.2!important;white-space:normal!important}';
+  document.head.appendChild(st);
 }
 
 const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -720,6 +730,7 @@ class KlSection extends HTMLElement {
     const ab = $('#klAcctBtn');
     if (ab) ab.addEventListener('click', () => this.dispatchEvent(new CustomEvent('kl-login', { bubbles: true, composed: true })));
     this.showMember(this.getAttribute('member'));
+    fitLoginTitles();
   }
 
   // logged-in member's initial on the account button (set by masterPage.js; empty = logged out)
