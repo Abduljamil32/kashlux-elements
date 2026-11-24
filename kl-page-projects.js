@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=6f31168a'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=e6dd40a3'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
@@ -89,6 +89,8 @@ const SHELL_CSS = ':host{display:block;position:relative;z-index:60;width:100%;f
   'header{position:relative!important;inset:auto!important;top:auto!important;transform:none!important}' +
   '.kl-backdrop.open{opacity:1;visibility:visible;transition:opacity .4s}' +
   '.kl-footer{margin:0!important}' +
+  // the footer elements keep the old Wix footer's height (they cover its hidden content): fill the rest in navy
+  ':host([name="footer"]){background:#211E36}' +
   // menu items stay on one line; the phone number is already in the promo line, so it leaves the header when space is short
   '.menu>a,.kl-dd>a{white-space:nowrap}@media (max-width:1600px){.nav-right .phone{display:none}}';
 
