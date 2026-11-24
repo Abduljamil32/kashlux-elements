@@ -32,7 +32,7 @@ function loadFile(file) {
   if (!file || loading[file]) return;
   loading[file] = true;
   const sc = document.createElement('script');
-  sc.src = BASE_URL + file + '?v=77d7b9cd'; // a new build number per release, so browsers don't reuse an old copy
+  sc.src = BASE_URL + file + '?v=6f31168a'; // a new build number per release, so browsers don't reuse an old copy
   sc.async = true;
   document.head.appendChild(sc);
 }
